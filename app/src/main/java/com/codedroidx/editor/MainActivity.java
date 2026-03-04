@@ -16,9 +16,6 @@ public class MainActivity extends AppCompatActivity {
 
         editor = findViewById(R.id.editor);
 
-        // Auto indent
-        editor.setAutoIndent(true);
-
         // Tab width
         editor.setTabWidth(4);
 
