@@ -2,31 +2,64 @@ import re
 from pathlib import Path
 
 gradle_file = Path("app/build.gradle")
-
 text = gradle_file.read_text()
 
-# 1. Tambahkan dependency Sora jika belum ada
-if "sora-editor" not in text:
-    text = re.sub(
-        r"dependencies\s*\{",
-        """dependencies {
-    implementation 'io.github.Rosemoe.sora-editor:editor:0.23.4'
-    implementation 'io.github.Rosemoe.sora-editor:language-textmate:0.23.4'
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
-""",
-        text
-    )
+deps = {
+    "io.github.Rosemoe.sora-editor:editor": "0.23.4",
+    "io.github.Rosemoe.sora-editor:language-textmate": "0.23.4",
+    "com.android.tools:desugar_jdk_libs": "2.0.4"
+}
 
-# 2. Aktifkan desugaring di compileOptions
-if "coreLibraryDesugaringEnabled" not in text:
-    text = re.sub(
-        r"compileOptions\s*\{",
-        """compileOptions {
-        coreLibraryDesugaringEnabled true
-""",
-        text
-    )
+# ------------------------
+# cek dependencies
+# ------------------------
+
+for lib, ver in deps.items():
+
+    pattern = rf"[\"']{lib}:[^\"']+[\"']"
+
+    if re.search(pattern, text):
+        # sudah ada tapi mungkin beda versi → ganti
+        text = re.sub(
+            pattern,
+            f"'{lib}:{ver}'",
+            text
+        )
+    else:
+        # belum ada → tambahkan
+        insert = f"implementation '{lib}:{ver}'"
+
+        if "desugar_jdk_libs" in lib:
+            insert = f"coreLibraryDesugaring '{lib}:{ver}'"
+
+        text = re.sub(
+            r"(dependencies\s*\{)",
+            r"\1\n    " + insert,
+            text,
+            count=1
+        )
+
+# ------------------------
+# aktifkan desugaring
+# ------------------------
+
+if "coreLibraryDesugaringEnabled true" not in text:
+
+    if "compileOptions" in text:
+        text = re.sub(
+            r"(compileOptions\s*\{)",
+            r"\1\n        coreLibraryDesugaringEnabled true",
+            text,
+            count=1
+        )
+    else:
+        text = re.sub(
+            r"(android\s*\{)",
+            r"\1\n    compileOptions {\n        coreLibraryDesugaringEnabled true\n    }\n",
+            text,
+            count=1
+        )
 
 gradle_file.write_text(text)
 
-print("✔ build.gradle updated")
+print("✔ Dependencies checked / replaced / added")
