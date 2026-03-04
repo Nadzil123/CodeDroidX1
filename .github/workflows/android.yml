@@ -18,12 +18,14 @@ jobs:
         distribution: temurin
         java-version: 17
 
+    - name: Make gradlew executable
+       run: chmod +x gradlew
+
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
     - name: Build APK
-      run: |
-        gradle :app:assembleDebug
+      run: ./gradlew :app:assembleDebug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
